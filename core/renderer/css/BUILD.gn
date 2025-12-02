@@ -6,6 +6,91 @@ import("../../../testing/test.gni")
 import("../../Lynx.gni")
 import("build.gni")
 
+if (enable_cssjit) {
+  config("asmjit_config") {
+    include_dirs = [ "//third_party/asmjit" ]
+    if (is_mac) {
+      cflags_cc = [ "-Wno-unguarded-availability-new" ]
+    }
+    defines = [
+      "ASMJIT_STATIC=1",
+      "ASMJIT_NO_UJIT=1",
+      "ASMJIT_NO_FOREIGN=1",
+      "ASMJIT_NO_COMPILER=1",
+      "ASMJIT_NO_ABI_NAMESPACE=1",
+
+      # comment following macros for diagnosis
+      "ASMJIT_NO_LOGGING=1",
+      "ASMJIT_NO_INTROSPECTION=1",
+      "ASMJIT_NO_TEXT=1",
+    ]
+  }
+  source_set("asmjit") {
+    public_configs = [ ":asmjit_config" ]
+    sources = [
+      "//third_party/asmjit/asmjit/arm/a64assembler.cpp",
+      "//third_party/asmjit/asmjit/arm/a64builder.cpp",
+      "//third_party/asmjit/asmjit/arm/a64compiler.cpp",
+      "//third_party/asmjit/asmjit/arm/a64emithelper.cpp",
+      "//third_party/asmjit/asmjit/arm/a64formatter.cpp",
+      "//third_party/asmjit/asmjit/arm/a64func.cpp",
+      "//third_party/asmjit/asmjit/arm/a64instapi.cpp",
+      "//third_party/asmjit/asmjit/arm/a64instdb.cpp",
+      "//third_party/asmjit/asmjit/arm/a64operand.cpp",
+      "//third_party/asmjit/asmjit/arm/a64rapass.cpp",
+      "//third_party/asmjit/asmjit/arm/armformatter.cpp",
+      "//third_party/asmjit/asmjit/core/archtraits.cpp",
+      "//third_party/asmjit/asmjit/core/assembler.cpp",
+      "//third_party/asmjit/asmjit/core/builder.cpp",
+      "//third_party/asmjit/asmjit/core/codeholder.cpp",
+      "//third_party/asmjit/asmjit/core/codewriter.cpp",
+      "//third_party/asmjit/asmjit/core/compiler.cpp",
+      "//third_party/asmjit/asmjit/core/constpool.cpp",
+      "//third_party/asmjit/asmjit/core/cpuinfo.cpp",
+      "//third_party/asmjit/asmjit/core/emithelper.cpp",
+      "//third_party/asmjit/asmjit/core/emitter.cpp",
+      "//third_party/asmjit/asmjit/core/emitterutils.cpp",
+      "//third_party/asmjit/asmjit/core/environment.cpp",
+      "//third_party/asmjit/asmjit/core/errorhandler.cpp",
+      "//third_party/asmjit/asmjit/core/formatter.cpp",
+      "//third_party/asmjit/asmjit/core/func.cpp",
+      "//third_party/asmjit/asmjit/core/funcargscontext.cpp",
+      "//third_party/asmjit/asmjit/core/globals.cpp",
+      "//third_party/asmjit/asmjit/core/inst.cpp",
+      "//third_party/asmjit/asmjit/core/instdb.cpp",
+      "//third_party/asmjit/asmjit/core/jitallocator.cpp",
+      "//third_party/asmjit/asmjit/core/jitruntime.cpp",
+      "//third_party/asmjit/asmjit/core/logger.cpp",
+      "//third_party/asmjit/asmjit/core/operand.cpp",
+      "//third_party/asmjit/asmjit/core/osutils.cpp",
+      "//third_party/asmjit/asmjit/core/ralocal.cpp",
+      "//third_party/asmjit/asmjit/core/rapass.cpp",
+      "//third_party/asmjit/asmjit/core/rastack.cpp",
+      "//third_party/asmjit/asmjit/core/string.cpp",
+      "//third_party/asmjit/asmjit/core/target.cpp",
+      "//third_party/asmjit/asmjit/core/type.cpp",
+      "//third_party/asmjit/asmjit/core/virtmem.cpp",
+      "//third_party/asmjit/asmjit/support/arena.cpp",
+      "//third_party/asmjit/asmjit/support/arenabitset.cpp",
+      "//third_party/asmjit/asmjit/support/arenahash.cpp",
+      "//third_party/asmjit/asmjit/support/arenalist.cpp",
+      "//third_party/asmjit/asmjit/support/arenatree.cpp",
+      "//third_party/asmjit/asmjit/support/arenavector.cpp",
+      "//third_party/asmjit/asmjit/support/support.cpp",
+      "//third_party/asmjit/asmjit/x86/x86assembler.cpp",
+      "//third_party/asmjit/asmjit/x86/x86builder.cpp",
+      "//third_party/asmjit/asmjit/x86/x86compiler.cpp",
+      "//third_party/asmjit/asmjit/x86/x86emithelper.cpp",
+      "//third_party/asmjit/asmjit/x86/x86formatter.cpp",
+      "//third_party/asmjit/asmjit/x86/x86func.cpp",
+      "//third_party/asmjit/asmjit/x86/x86instapi.cpp",
+      "//third_party/asmjit/asmjit/x86/x86instdb.cpp",
+      "//third_party/asmjit/asmjit/x86/x86operand.cpp",
+      "//third_party/asmjit/asmjit/x86/x86rapass.cpp",
+    ]
+  }
+}
+
 lynx_core_source_set("css") {
   check_includes = false
 
@@ -40,6 +125,16 @@ lynx_core_source_set("css") {
       ":css_parser",
       "../../../third_party/double-conversion:double_conversion",
     ]
+  }
+
+  if (enable_cssjit) {
+    sources += [
+      "ng/cssjit_background.cc",
+      "ng/cssjit_compiler.cc",
+      "ng/cssjit_compiler.h",
+      "ng/cssjit_masm.h",
+    ]
+    deps += [ ":asmjit" ]
   }
 }
 

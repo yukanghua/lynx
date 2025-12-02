@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 
+#include "core/renderer/css/ng/cssjit_compiler.h"
 #include "core/renderer/css/ng/parser/css_parser_token_range.h"
 #include "core/renderer/css/ng/parser/css_tokenizer.h"
 #include "core/renderer/css/ng/selector/css_parser_context.h"
@@ -18,6 +19,10 @@
 
 namespace lynx {
 namespace css {
+
+#if ENABLE_CSSJIT
+static CSSJITCompiler cssjit;
+#endif
 
 TEST(CSSMatcherTest, CheckSimple) {
   const char* test_case = "div .a:focus";
@@ -44,6 +49,14 @@ TEST(CSSMatcherTest, CheckSimple) {
   auto ret = matcher.Match(matchingContext);
 
   EXPECT_TRUE(ret);
+
+#if ENABLE_CSSJIT
+  auto func = cssjit.Compile(list.First());
+  if (func) {
+    bool ret = func(child_ptr) == kMatches;
+    EXPECT_TRUE(ret);
+  }
+#endif
 }
 
 struct MatchStatusTestData {
@@ -78,6 +91,7 @@ MatchStatusTestData matcher_test_data[] = {
     {":not(view)", false},
     {":not(:active, :hover)", true},
     {":not(:active, :focus)", false},
+    {":not(:not(:active, :focus))", true},
 };
 
 class MatchStatusTest
@@ -125,6 +139,15 @@ TEST_P(MatchStatusTest, All) {
   bool ret = matcher.Match(matchingContext);
   SCOPED_TRACE(param.selector);
   EXPECT_EQ(param.status, ret);
+
+#if ENABLE_CSSJIT
+  printf(" --CSSJIT-- %s\n", param.selector);
+  auto func = cssjit.Compile(list.First());
+  if (func) {
+    bool ret = func(target_ptr) == kMatches;
+    EXPECT_EQ(param.status, ret);
+  }
+#endif
 }
 
 TEST(CSSMatcherTest, CheckPseudoElement) {
@@ -159,6 +182,14 @@ TEST(CSSMatcherTest, CheckPseudoElement) {
     matchingContext.selector = list.First();
     auto ret = matcher.Match(matchingContext);
     EXPECT_FALSE(ret);
+
+#if ENABLE_CSSJIT
+    auto func = cssjit.Compile(list.First());
+    if (func) {
+      bool ret = func(child_ptr) == kMatches;
+      EXPECT_FALSE(ret);
+    }
+#endif
   }
   {
     SelectorMatcher matcher;
@@ -166,6 +197,14 @@ TEST(CSSMatcherTest, CheckPseudoElement) {
     matchingContext.selector = list.First();
     auto ret = matcher.Match(matchingContext);
     EXPECT_TRUE(ret);
+
+#if ENABLE_CSSJIT
+    auto func = cssjit.Compile(list.First());
+    if (func) {
+      bool ret = func(&placeholder) == kMatches;
+      EXPECT_TRUE(ret);
+    }
+#endif
   }
   {
     SelectorMatcher matcher;
@@ -173,6 +212,14 @@ TEST(CSSMatcherTest, CheckPseudoElement) {
     matchingContext.selector = list.Next(*list.First());
     auto ret = matcher.Match(matchingContext);
     EXPECT_TRUE(ret);
+
+#if ENABLE_CSSJIT
+    auto func = cssjit.Compile(list.Next(*list.First()));
+    if (func) {
+      bool ret = func(&selection) == kMatches;
+      EXPECT_TRUE(ret);
+    }
+#endif
   }
 }
 

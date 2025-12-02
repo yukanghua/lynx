@@ -13,6 +13,13 @@
 namespace lynx {
 namespace css {
 
+enum MatchResult {
+  kMatches,
+  kFailsLocally,
+  kFailsAllSiblings,
+  kFailsCompletely
+};
+
 class SelectorMatcher {
  public:
   SelectorMatcher() = default;
@@ -31,22 +38,12 @@ class SelectorMatcher {
 
  private:
   bool MatchSimple(const SelectorMatchingContext&) const;
-
-  enum MatchResult {
-    kMatches,
-    kFailsLocally,
-    kFailsAllSiblings,
-    kFailsCompletely
-  };
-
   MatchResult MatchSelector(const SelectorMatchingContext&) const;
   MatchResult MatchForSubSelector(const SelectorMatchingContext&) const;
   MatchResult MatchForRelation(const SelectorMatchingContext&) const;
   bool MatchPseudoClass(const SelectorMatchingContext&) const;
   bool MatchPseudoElement(const SelectorMatchingContext&) const;
   bool MatchPseudoNot(const SelectorMatchingContext&) const;
-
-  mutable bool in_match_ = false;
 };
 }  // namespace css
 }  // namespace lynx

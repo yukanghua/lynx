@@ -43,6 +43,7 @@ config("lynx_public_config") {
     "DISABLE_NANBOX=${disable_nanbox}",
     "ENABLE_JUST_LEPUSNG=${enable_just_lepusng}",
     "ENABLE_INSPECTOR=${enable_inspector}",
+    "ENABLE_CSSJIT=${enable_cssjit}",
   ]
 
   if (is_android) {

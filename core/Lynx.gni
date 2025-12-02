@@ -15,6 +15,10 @@ declare_args() {
   # enable_air corresponds the macro of ENABLE_AIR
   enable_air = false
 
+  # Whether enable CSS JIT
+  enable_cssjit = (is_win || is_mac || is_android) &&
+                  (target_cpu == "arm64" || target_cpu == "x64")
+
   # disable_nanbox corresponds the macro of DISABLE_NANBOX
   disable_nanbox = false
 

@@ -9,6 +9,7 @@
 #include "base/include/auto_reset.h"
 #include "base/include/string/string_utils.h"
 #include "core/renderer/css/ng/css_ng_utils.h"
+#include "core/renderer/css/ng/cssjit_compiler.h"
 #include "core/renderer/css/ng/selector/lynx_css_selector_list.h"
 
 namespace lynx {
@@ -20,12 +21,24 @@ static StyleNode* Parent(
 }
 
 bool SelectorMatcher::Match(const SelectorMatchingContext& context) const {
-  base::AutoReset<bool> reset_in_match(&in_match_, true);
-
+#if ENABLE_CSSJIT
+  auto selector = const_cast<LynxCSSSelector*>(context.selector);
+  if (auto fn = reinterpret_cast<JitCodeMatcher>(selector->GetJITCode())) {
+    return fn(context.holder) == kMatches;
+  }
+  switch (selector->GetJITStage()) {
+    case LynxCSSSelector::kInitialStage:
+      selector->SetJITStage(LynxCSSSelector::kCompiling);
+      CSSJITCompiler::CompileOnBackgroundThread(selector);
+      /*FALLTHROUGH*/
+    default:
+      break;
+  }
+#endif
   return MatchSelector(context) == kMatches;
 }
 
-SelectorMatcher::MatchResult SelectorMatcher::MatchSelector(
+MatchResult SelectorMatcher::MatchSelector(
     const SelectorMatchingContext& context) const {
   if (!MatchSimple(context)) {
     return kFailsLocally;
@@ -51,13 +64,13 @@ static inline SelectorMatcher::SelectorMatchingContext NextContext(
   return next_context;
 }
 
-SelectorMatcher::MatchResult SelectorMatcher::MatchForSubSelector(
+MatchResult SelectorMatcher::MatchForSubSelector(
     const SelectorMatchingContext& context) const {
   SelectorMatchingContext next_context = NextContext(context);
   return MatchSelector(next_context);
 }
 
-SelectorMatcher::MatchResult SelectorMatcher::MatchForRelation(
+MatchResult SelectorMatcher::MatchForRelation(
     const SelectorMatchingContext& context) const {
   SelectorMatchingContext next_context = NextContext(context);
   LynxCSSSelector::RelationType relation = context.selector->Relation();

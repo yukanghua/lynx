@@ -47,6 +47,13 @@ class LynxCSSSelector {
 
   unsigned CalcSpecificity() const;
 
+  enum JITStage {
+    kInitialStage,
+    kCompiling,
+    kNotAvailable,
+    kReady,
+  };
+
   enum MatchType {
     kUnknown,
     kTag,
@@ -175,6 +182,16 @@ class LynxCSSSelector {
               pseudo_type);  // using a bitfield.
   }
 
+#if ENABLE_CSSJIT
+  JITStage GetJITStage() const { return static_cast<JITStage>(jit_stage_); }
+  void SetJITStage(JITStage s) { jit_stage_ = static_cast<int>(s); }
+  void* GetJITCode() const { return jit_code_; }
+  void SetJITCode(void* code) {
+    jit_code_ = code;
+    jit_stage_ = code ? kReady : kNotAvailable;
+  }
+#endif
+
   unsigned CalcSpecificityForSimple() const;
   const LynxCSSSelector* SerializeCompound(std::string&) const;
 
@@ -189,6 +206,9 @@ class LynxCSSSelector {
   unsigned relation_ : 4;     // enum RelationType
   unsigned match_ : 4;        // enum MatchType
   unsigned pseudo_type_ : 8;  // enum PseudoType
+#if ENABLE_CSSJIT
+  unsigned jit_stage_ : 4;  // enum JITStage
+#endif
   unsigned is_last_in_selector_list_ : 1;
   unsigned is_last_in_tag_history_ : 1;
   unsigned has_extra_data_ : 1;
@@ -196,6 +216,9 @@ class LynxCSSSelector {
   uint32_t specificity_;
   std::string value_;
   std::unique_ptr<LynxCSSSelectorExtraData> extra_data_;
+#if ENABLE_CSSJIT
+  void* jit_code_ = nullptr;
+#endif
 };
 
 inline const std::string& LynxCSSSelector::Attribute() const {
@@ -223,6 +246,9 @@ inline LynxCSSSelector::LynxCSSSelector()
     : relation_(kSubSelector),
       match_(kUnknown),
       pseudo_type_(kPseudoUnknown),
+#if ENABLE_CSSJIT
+      jit_stage_(kNotAvailable),
+#endif
       is_last_in_selector_list_(false),
       is_last_in_tag_history_(true),
       has_extra_data_(false),
@@ -235,6 +261,9 @@ inline LynxCSSSelector::LynxCSSSelector(const std::string& tag_name,
     : relation_(kSubSelector),
       match_(kTag),
       pseudo_type_(kPseudoUnknown),
+#if ENABLE_CSSJIT
+      jit_stage_(kNotAvailable),
+#endif
       is_last_in_selector_list_(false),
       is_last_in_tag_history_(true),
       has_extra_data_(false),

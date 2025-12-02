@@ -78,6 +78,12 @@ deps = {
         "patches": os.path.join(root_dir, 'patches', 'xhook', '*.patch'),
         "ignore_in_git": True,
     },
+    "third_party/asmjit": {
+        'type': 'git',
+        'url': 'https://github.com/asmjit/asmjit.git',
+        'commit': '11f75973ae5cc577d2f8db367d5d7524a5d9bd3d',
+        "ignore_in_git": True,
+    },
     'python_venv_set': {
         "type": "action",
         "commands": [
